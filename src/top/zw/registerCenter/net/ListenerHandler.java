@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.net.Socket;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 /**
@@ -41,7 +42,7 @@ public class ListenerHandler implements Runnable{
              String receivedStr;
              while (!socket.isClosed() && !Thread.currentThread().isInterrupted()){
                  receivedStr = reader.readLine();
-                 if(Integer.valueOf(receivedStr.trim()) == 0xff){
+                 if(receivedStr.equals("HEART CKECK010203")){
                      writer.println("HEART_CHECK_OK!");
                  }
              }

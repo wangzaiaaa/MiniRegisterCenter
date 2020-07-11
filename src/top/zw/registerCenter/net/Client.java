@@ -16,14 +16,14 @@ public class Client {
     //每个5000毫秒检测一次心跳
     private static final int HEART_CHECK_RATE = 5000;
     //心跳检测包
-    private static final int HEART_CHECK_PACKAGE = 0xff;
+    private static final String HEART_CHECK_PACKAGE = "HEART CKECK010203";
     //心跳检测规定返回字符串
     private static final String HEART_CHECK_RESPONSE_STRING = "HEART_CHECK_OK!";
 
     /**
      * 心跳检测线程
      */
-    private static class HeartCheck implements Runnable{
+    private static class HeartCheck extends Thread{
         private Socket socket;
         HeartCheck(Socket socket){
             this.socket = socket;
@@ -33,21 +33,28 @@ public class Client {
             try(BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
                 PrintStream writer = new PrintStream(socket.getOutputStream());
             ){
+
                 long beginTime;
                 String receivedStr;
                 while (!Thread.currentThread().isInterrupted() && !socket.isClosed()){
-                    writer.write(HEART_CHECK_PACKAGE);
+                    writer.println(HEART_CHECK_PACKAGE);
                     beginTime = System.currentTimeMillis();
-                         receivedStr = readLine(reader);
-                         if(System.currentTimeMillis() - beginTime > HEART_CHECK_RATE){
-                             writeLine(writer,"超出心跳检测规定的时间，连接断开......");
-                             throw new TimeoutException("心跳检测超时...");
-                         }
-                         if(receivedStr == null || !receivedStr.equals(HEART_CHECK_RESPONSE_STRING)){
-                             writeLine(writer,"不符合心跳检测规定返回，连接断开......");
-                             throw new IllegalArgumentException("未按照规定相应心跳包");
-                         }
-                 }
+                    receivedStr = reader.readLine();
+//                    try{
+//                        TimeUnit.SECONDS.sleep(6);
+//                    }catch (InterruptedException e){
+//                        e.printStackTrace();
+//                    }
+                    if(System.currentTimeMillis() - beginTime > HEART_CHECK_RATE){
+                        System.out.println("超出心跳检测规定的时间，连接断开......");
+                        throw new TimeoutException("心跳检测超时...");
+                    }
+                    if(receivedStr == null || !receivedStr.equals(HEART_CHECK_RESPONSE_STRING)) {
+                        System.out.println("不符合心跳检测规定返回，连接断开......");
+                        throw new IllegalArgumentException("未按照规定相应心跳包");
+                    }
+                }
+                System.out.println("end");
             }catch (IOException e){
                 e.printStackTrace();
             }catch (TimeoutException e){
@@ -72,29 +79,24 @@ public class Client {
         out.println(info);
     }
 
-    private static String readLine(BufferedReader reader) throws IOException{
-        String s = reader.readLine();
-        return s;
-    }
+
     public static void main(String[] args) throws IOException {
         Socket socket = new Socket(SERVER_ADDRESS,SERVER_PORT);
         try(BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             PrintStream writer = new PrintStream(socket.getOutputStream());
         ){
             writeLine(writer,"UserService:127.0.0.1:8888/getUserById");
-            new Thread(new HeartCheck(socket)).start();
-            while (!socket.isClosed()){
-                TimeUnit.SECONDS.sleep(1000);
-            }
+            Thread heartThread = new HeartCheck(socket);
+            heartThread.start();
+            heartThread.join();
+
         }catch(Exception e){
             e.printStackTrace();
         }finally {
-            if(!socket.isClosed()){
-                try{
-                    socket.close();
-                }catch (Exception e){
-                    e.printStackTrace();
-                }
+            try{
+                socket.close();
+            }catch (Exception e){
+                e.printStackTrace();
             }
         }
 
