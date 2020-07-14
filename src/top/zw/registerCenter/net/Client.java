@@ -53,6 +53,11 @@ public class Client {
                         System.out.println("不符合心跳检测规定返回，连接断开......");
                         throw new IllegalArgumentException("未按照规定相应心跳包");
                     }
+                    try{
+                        TimeUnit.SECONDS.sleep(5);
+                    }catch (InterruptedException e){
+                        e.printStackTrace();
+                    }
                 }
                 System.out.println("end");
             }catch (IOException e){

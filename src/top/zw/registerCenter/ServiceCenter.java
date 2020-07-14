@@ -13,7 +13,7 @@ import java.util.concurrent.TimeUnit;
  * 此类用来存储服务信息
  */
 public class ServiceCenter {
-    private static final ConcurrentHashMap<String, Set<ServiceProvider>> map = new ConcurrentHashMap<>();
+    private static volatile ConcurrentHashMap<String, Set<ServiceProvider>> map = new ConcurrentHashMap<>();
 
     /**
      * 注册服务提供者，需要考虑并发安全问题

@@ -11,21 +11,24 @@ import java.util.concurrent.TimeUnit;
 
 public class Server {
     private static final int SERVER_PORT = 8888;
-    private static final ServiceCenter serviceCenter = new ServiceCenter();
+    private static volatile ServiceCenter serviceCenter = new ServiceCenter();
     public static void main(String[] args) throws IOException {
         ServerSocket serverSocket = new ServerSocket(SERVER_PORT);
         ExecutorService executorService = Executors.newFixedThreadPool(3);
-        for(;;){
-            Socket socket = serverSocket.accept();
-            executorService.submit(new ListenerHandler(socket,serviceCenter));
+        new Thread(() -> {
             while (true){
-                serviceCenter.showServicesInfo();
                 try{
+                    serviceCenter.showServicesInfo();
                     TimeUnit.SECONDS.sleep(5);
                 }catch (InterruptedException e){
                     e.printStackTrace();
                 }
             }
+        }).start();
+        for(;;){
+            Socket socket = serverSocket.accept();
+            executorService.submit(new ListenerHandler(socket,serviceCenter));
+
         }
     }
 }
